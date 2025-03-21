@@ -1,0 +1,44 @@
+services:
+  post-db:
+    image: mysql:8.0
+    container_name: sns-post-db
+    environment:
+      MYSQL_DATABASE: postdb
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "13306:3306"
+    volumes:
+      - post-db-data:/var/lib/mysql
+    networks:
+      - sns-network
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: unless-stopped
+
+  post-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sns-post-api
+    ports:
+      - "8081:8081"
+    depends_on:
+      - post-db
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://sns-post-db:3306/postdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+      SERVER_PORT: 8081
+    networks:
+      - sns-network
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+volumes:
+  post-db-data:
+
+networks:
+  sns-network:
+    external: true
